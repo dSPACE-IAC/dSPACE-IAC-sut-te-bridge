@@ -37,9 +37,11 @@
 #include "novatel_oem7_msgs/msg/bestvel.hpp"
 #include "novatel_oem7_msgs/msg/inspva.hpp"
 #include "novatel_oem7_msgs/msg/heading2.hpp"
-#include "novatel_oem7_msgs/msg/rawimu.hpp"
+// #include "novatel_oem7_msgs/msg/rawimu.hpp"
 
 #include "foxglove_msgs/msg/scene_update.hpp"
+
+#include <can_msgs/msg/frame.hpp>
 
 #include "iac_qos.h"
 
@@ -48,6 +50,12 @@
 
 #include "ASMBus_renamed.h"
 #include "RaceControlInterface.h"
+#include "sut-te-bridge/canid_enum.hpp"
+
+#include <can_dbc_parser/Dbc.hpp>
+#include <can_dbc_parser/DbcBuilder.hpp>
+#include <can_dbc_parser/DbcMessage.hpp>
+#include <can_dbc_parser/DbcSignal.hpp>
 
 namespace bridge
 {
@@ -78,7 +86,7 @@ namespace bridge
         rclcpp::Publisher<novatel_oem7_msgs::msg::BESTVEL>::SharedPtr novaTelBestGNSSVelPublisher;
         rclcpp::Publisher<novatel_oem7_msgs::msg::INSPVA>::SharedPtr novaTelInspvaPublisher;
         rclcpp::Publisher<novatel_oem7_msgs::msg::HEADING2>::SharedPtr novaTelHeading2Publisher;
-        rclcpp::Publisher<novatel_oem7_msgs::msg::RAWIMU>::SharedPtr novaTelRawImuPublisher;
+        // rclcpp::Publisher<novatel_oem7_msgs::msg::RAWIMU>::SharedPtr novaTelRawImuPublisher;
         rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr novaTelRawImuXPublisher;
 
         rclcpp::Publisher<novatel_oem7_msgs::msg::BESTPOS>::SharedPtr novaTelBestPosPublisher1_;
@@ -87,7 +95,7 @@ namespace bridge
         rclcpp::Publisher<novatel_oem7_msgs::msg::BESTVEL>::SharedPtr novaTelBestGNSSVelPublisher1_;
         rclcpp::Publisher<novatel_oem7_msgs::msg::INSPVA>::SharedPtr novaTelInspvaPublisher1_;
         rclcpp::Publisher<novatel_oem7_msgs::msg::HEADING2>::SharedPtr novaTelHeading2Publisher1_;
-        rclcpp::Publisher<novatel_oem7_msgs::msg::RAWIMU>::SharedPtr novaTelRawImuPublisher1_;
+        // rclcpp::Publisher<novatel_oem7_msgs::msg::RAWIMU>::SharedPtr novaTelRawImuPublisher1_;
         rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr novaTelRawImuXPublisher1_;
 
         rclcpp::Publisher<novatel_oem7_msgs::msg::BESTPOS>::SharedPtr novaTelBestPosPublisher2_;
@@ -96,12 +104,16 @@ namespace bridge
         rclcpp::Publisher<novatel_oem7_msgs::msg::BESTVEL>::SharedPtr novaTelBestGNSSVelPublisher2_;
         rclcpp::Publisher<novatel_oem7_msgs::msg::INSPVA>::SharedPtr novaTelInspvaPublisher2_;
         rclcpp::Publisher<novatel_oem7_msgs::msg::HEADING2>::SharedPtr novaTelHeading2Publisher2_;
-        rclcpp::Publisher<novatel_oem7_msgs::msg::RAWIMU>::SharedPtr novaTelRawImuPublisher2_;
+        // rclcpp::Publisher<novatel_oem7_msgs::msg::RAWIMU>::SharedPtr novaTelRawImuPublisher2_;
         rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr novaTelRawImuXPublisher2_;
 
         rclcpp::Publisher<sensor_msgs::msg::NavSatFix>::SharedPtr foxgloveMapPublisher_;
         rclcpp::Publisher<foxglove_msgs::msg::SceneUpdate>::SharedPtr foxgloveScenePublisher_;
         rclcpp::Publisher<geometry_msgs::msg::TransformStamped>::SharedPtr egoPositionPublisher_;
+
+        rclcpp::Publisher<Frame>::SharedPtr canPublisher_;
+        // rclcpp::Publisher<Frame>::SharedPtr pub_can_;
+        rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr canSubscriber_;
 
         // Timer
         rclcpp::TimerBase::SharedPtr updateVESIVehicleInputs_;
@@ -157,6 +169,7 @@ namespace bridge
         void subscribeRaptorCommandsCallback(const autonoma_msgs::msg::ToRaptor &msg);
         void switchRaceControlSourceCallback(const std_msgs::msg::Bool &msg);
         void simTimeIncreaseCallback(const std_msgs::msg::UInt16 &msg);
+        void canSubscriberCallback(Frame::UniquePtr msg);
 
         // Publishing functions
         void publishFoxgloveMap();
@@ -168,6 +181,21 @@ namespace bridge
         void publishGroundTruthArray();
         void publishVectorNavData();
         void publishNovatelData(uint8_t novatelID);
+        // void publishCanData(uint32_t message_id, const std::vector<uint8_t>& data);
 
+        //Receiving CAN frames
+        void recvBrakePressureCmd(const Frame& msg);
+        void recvAcceleratorCmd(const Frame& msg);
+        void recvSteeringCmd(const Frame& msg);
+        void recvGearShiftCmd(const Frame& msg);
+        void recvCtReport(const Frame& msg);
+
+
+        void publishAllCanData();
+        void publishCanDataFromBus(bridge::MessageID can_id);
+        std::array<uint8_t, 8> getCanPayload(bridge::MessageID can_id);
+
+        std::string dbw_dbc_file_;
+        NewEagle::Dbc dbwDbc_;
     };
 }

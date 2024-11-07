@@ -11,9 +11,12 @@ RUN apt-get update && \
     apt-get install -y openssh-server xauth build-essential libboost-all-dev python3-colcon-common-extensions git cmake g++ software-properties-common gdb
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends wget python3-pip debconf python3 python3-setuptools && \
-    cp /etc/supervisor/conf.d/supervisord.conf /etc/supervisord.conf && \
-    pip3 install --no-cache-dir supervisor==4.2.* supervisor-console==0.5.* supervisord-dependent-startup==1.4.* 2>&1 && \
+    apt-get install -y --no-install-recommends \
+    wget python3-pip debconf python3 python3-setuptools supervisor && \
+    cp /etc/supervisor/supervisord.conf /etc/supervisord.conf && \
+    pip3 install --no-cache-dir \
+    supervisor==4.2.* supervisor-console==0.5.* \
+    supervisord-dependent-startup==1.4.* 2>&1 && \
     mkdir -p /etc/opt/dspace/supervisord /var/log/supervisor/ && \
     chmod 755 /etc/opt/dspace/supervisord && \
     chmod 777 /var/log/supervisor
@@ -52,6 +55,8 @@ RUN mkdir -p /root/record_log && \
 
 WORKDIR /root/runtime_scripts
 
+COPY src/sut_te_bridge/config/CAN1-INDY-V17.dbc /root/ros2_bridge_ws/src/sut_te_bridge/config/
+
 FROM sut-te-bridge_base AS sut-te-bridge_simphera
 
 COPY ros2_bridge_ws /root/ros2_bridge_ws
@@ -70,3 +75,4 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends ros-humble-foxglove-bridge
 
 ENTRYPOINT ["sh", "-c", ". /opt/ros/humble/local_setup.sh && . /root/ros_ws_aux/install/local_setup.sh && . /root/ros2_bridge_ws/install/local_setup.sh && ros2 launch foxglove_bridge foxglove_bridge_launch.xml"]
+
