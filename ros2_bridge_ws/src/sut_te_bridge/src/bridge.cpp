@@ -5,9 +5,6 @@
 #include <can_dbc_parser/DbcMessage.hpp>
 #include <can_dbc_parser/DbcSignal.hpp>
 #include <builtin_interfaces/msg/time.hpp>
-#include <fstream>  // For checking Docker environment
-
-
 
 using std::placeholders::_1;
 using namespace std::chrono_literals;
@@ -63,25 +60,10 @@ namespace bridge {
       raptor_rolling_counter_ = (raptor_rolling_counter_ + 1) % 16;
   }
 
-  // // Helper function to detect if running inside a Docker container
-  // bool isRunningInDocker() {
-  //     std::ifstream file("/proc/self/cgroup");
-  //     std::string line;
-  //     while (std::getline(file, line)) {
-  //         if (line.find("docker") != std::string::npos) {
-  //             return true;
-  //         }
-  //     }
-  //     return false;
-  // }
-
   SutTeBridgeNode::SutTeBridgeNode() : Node("sut_te_bridge_node")
   {
     dbw_dbc_file_ = this->declare_parameter<std::string>(
         "dbw_dbc_file", "/root/ros2_bridge_ws/src/sut_te_bridge/config/CAN1-INDY-V17.dbc");
-
-
-    // std::cout << "Current working directory: " << rcpputils::fs::current_path() << std::endl;
 
     try {
         // Load the DBC file using DbcBuilder
@@ -100,13 +82,6 @@ namespace bridge {
                      dbw_dbc_file_.c_str(), e.what());
         throw e;
     }
-
-    // // Check if the application is running inside Docker
-    // bool insideDocker = isRunningInDocker();
-
-    // std::cout << "Running inside Docker: " << (insideDocker ? "Yes" : "No") << std::endl;
-
-    // if (insideDocker) {
 
     std::cout << "Set SimManager Host IP to: "<< std::getenv("VESI_IP") << std::endl;
     if (std::getenv("VESI_IP")){
@@ -207,9 +182,6 @@ namespace bridge {
         }
       }
     }
-
-    // }
-
 
     try
     {
@@ -426,11 +398,6 @@ namespace bridge {
           SutTeBridgeNode::publishFoxgloveMap();
           // SutTeBridgeNode::publishFoxgloveSceneUpdate();
         }
-
-        // // New: Publish all CAN data from the CAN bus
-        // if (this->verbosePrinting)
-        //     std::cout << "Publishing all CAN data" << '\n';
-        // SutTeBridgeNode::publishAllCanData();
 
         this->vesiDataAvailabe = false;
       }
@@ -803,8 +770,7 @@ namespace bridge {
         raceControlData.track_flag = this->canBus->asm_bus_var.race_control_var.track_flag;
       }
       raceControlData.veh_flag = this->canBus->asm_bus_var.race_control_var.veh_flag;
-      // this->canBus->asm_bus_var.race_control_var.sys_state = 19.0;
-      std::cout << "Sys State (Race Control) : " << static_cast<int>(this->canBus->asm_bus_var.race_control_var.sys_state) << std::endl;
+      // std::cout << "Sys State (Race Control) : " << static_cast<int>(this->canBus->asm_bus_var.race_control_var.sys_state) << std::endl;
       raceControlData.sys_state = this->canBus->asm_bus_var.race_control_var.sys_state;
       // std::cout << "Sys State (Race Control) : " << static_cast<int>(raceControlData.sys_state) << std::endl; //DEFAULT 255
       raceControlData.veh_rank = this->canBus->asm_bus_var.race_control_var.veh_rank;
@@ -981,14 +947,11 @@ namespace bridge {
 
     this->vehicleDataPublisher_->publish(vehicleData);
 
-// std::cout << "Sys State (Vehicle Data) : " << static_cast<int>(vehicleData.sys_state) << std::endl; //DEFAULT 0
-// std::cout << "Safety switch State (Vehicle Data) : " << static_cast<int>(vehicleData.safety_switch_state) << std::endl; //DEFAULT 0
 
 // PUBLISH MISC_REPORT
     DbcFrameTx dbcFrame{MessageID::MISC_REPORT, this->dbwDbc_}; 
     if (this->dbwDbc_.GetMessageCount() == 0) {
         std::cerr << "DBC file is not loaded or contains no messages." << std::endl;
-        // return;
     }
     // else{
     //   std::cout << "DBC file loaded correctly" << '\n'; 
