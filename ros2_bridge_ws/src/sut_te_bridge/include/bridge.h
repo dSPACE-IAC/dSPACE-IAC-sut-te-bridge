@@ -12,7 +12,6 @@
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
-
 #include "sensor_msgs/msg/imu.hpp"
 #include "sensor_msgs/msg/nav_sat_fix.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -26,6 +25,7 @@
 #include "autonoma_msgs/msg/to_raptor.hpp"
 #include "autonoma_msgs/msg/vehicle_data.hpp"
 #include "autonoma_msgs/msg/vehicle_inputs.hpp"
+#include "autonoma_msgs/msg/push2_pass.hpp"
 
 #include "vectornav_msgs/msg/common_group.hpp"
 #include "vectornav_msgs/msg/attitude_group.hpp"
@@ -62,6 +62,7 @@ namespace bridge
     private:
         // Publisher
         rclcpp::Publisher<autonoma_msgs::msg::RaceControl>::SharedPtr raceControlDataPublisher_;
+        rclcpp::Publisher<autonoma_msgs::msg::Push2Pass>::SharedPtr push2PassFeedbackPublisher_;
         rclcpp::Publisher<autonoma_msgs::msg::VehicleData>::SharedPtr vehicleDataPublisher_;
         rclcpp::Publisher<autonoma_msgs::msg::PowertrainData>::SharedPtr powertrainDataPublisher_;
         rclcpp::Publisher<autonoma_msgs::msg::GroundTruthArray>::SharedPtr groundTruthArrayPublisher_;
@@ -180,6 +181,7 @@ namespace bridge
         void publishFoxgloveSceneUpdate();
         void publishSimulationState();
         void publishRaceControlData();
+        void publishPush2PassFeedback();
         void publishVehicleData();
         void publishPowertrainData();
         void publishGroundTruthArray();

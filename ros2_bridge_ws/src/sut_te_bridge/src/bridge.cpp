@@ -7,19 +7,31 @@ namespace bridge {
 
   SutTeBridgeNode::SutTeBridgeNode() : Node("sut_te_bridge_node")
   {
-    std::cout << "Set SimManager Host IP to: "<< std::getenv("VESI_IP") << std::endl;
     if (std::getenv("VESI_IP")){
       this->api.setSimManagerHost(std::getenv("VESI_IP"));
+      std::cout << "Set SimManager Host IP to: "<< std::getenv("VESI_IP") << std::endl;
     } else {
       this->api.setSimManagerHost("127.0.0.1");
+      std::cout << "Set SimManager Host IP to: 127.0.0.1 (default)" std::endl;
     }
-    std::cout << "Set ASM Host IP to: " << std::getenv("ASM_IP") << std::endl;
+    
     if (std::getenv("ASM_IP")){
       this->api.setASMHost(std::getenv("ASM_IP"));
+      std::cout << "Set ASM Host IP to: " << std::getenv("ASM_IP") << std::endl;
     } else {
       this->api.setASMHost("127.0.0.1");
+      std::cout << "Set ASM Host IP to: 127.0.0.1 (default)" << std::endl;
     }
-    std::cout << "Set Publish interval" << std::endl;
+       
+    if (std::getenv("SIMMANAGER_PORT")){
+      this->api.setSimManagerPort(std::stoi(std::getenv("SIMMANAGER_PORT")));
+      std::cout << "Set SimManager Host Port to: "<< std::getenv("SIMMANAGER_PORT") << std::endl;
+    } else {
+      this->api.setSimManagerPort(12345);
+      std::cout << "Set SimManager Host Port to: 12345 (default)"<< std::endl;
+    }
+
+    std::cout << "Set Publish intervals" << std::endl;
     if (std::getenv("PUB_ITV_RACE_CONTROL_DATA")){
       this->pubIntervalRaceControlData = static_cast<uint32_t>(std::stoul(std::string(std::getenv("PUB_ITV_RACE_CONTROL_DATA"))));
     } else {
@@ -71,13 +83,11 @@ namespace bridge {
       this->enableTimeRecord = false;
     }
 
-    std::cout << "Set SimManager Host Port to: 12345"<< std::endl;
-    this->api.setSimManagerPort(12345);
     std::cout << "Set Custom Data required to: true"<< std::endl;
     this->api.setCustomDataRequired(true);
 
-    std::cout << "Trying to connect to V-ESI at: " << std::getenv("VESI_IP") << " : 12345" << std::endl;
-    std::cout << "Trying to connect to ASM at: " << std::getenv("ASM_IP") << " with CustomDataInterface set to: true" << std::endl;
+    std::cout << "Trying to connect to V-ESI at SimManager IP and Port" << std::endl;
+    std::cout << "Trying to connect to ASM at ASM IP with CustomDataInterface set to: true" << std::endl;
     bool vesiConnection = false;
     int16_t retries = 1;
     int16_t max_retries = 1;
@@ -125,6 +135,7 @@ namespace bridge {
       const auto qos = rclcpp::QoS(rclcpp::KeepLast(10), rmw_qos_profile_iac);
       const auto sim_qos = rclcpp::QoS(rclcpp::KeepLast(10), rmw_qos_profile_sim_clock);
       this->raceControlDataPublisher_ = this->create_publisher<autonoma_msgs::msg::RaceControl>("race_control", qos);
+      this->push2PassFeedbackPublisher_ = this->create_publisher<autonoma_msgs::msg::Push2Pass>("push_2_pass", qos);
       this->vehicleDataPublisher_ = this->create_publisher<autonoma_msgs::msg::VehicleData>("vehicle_data", qos);
       this->powertrainDataPublisher_ = this->create_publisher<autonoma_msgs::msg::PowertrainData>("powertrain_data", qos);
       this->groundTruthArrayPublisher_ = this->create_publisher<autonoma_msgs::msg::GroundTruthArray>("ground_truth_array", qos);
@@ -216,7 +227,9 @@ namespace bridge {
     this->feedbackCmd.vehicle_inputs.throttle_cmd_count = 0;
 
     // # Brake pressure command (kPa)
-    this->feedbackCmd.vehicle_inputs.brake_cmd = 0.0;
+    this->feedbackCmd.vehicle_inputs.brake_cmd_front = 0.0;
+    this->feedbackCmd.vehicle_inputs.brake_cmd_rear = 0.0;
+    this->feedbackCmd.vehicle_inputs.brake_bias_switch = 0.0;
     this->feedbackCmd.vehicle_inputs.brake_cmd_count = 0;
 
     // # Steering motor angle command (degrees)
@@ -373,6 +386,7 @@ namespace bridge {
       {
         if(this->simTotalMsec % (this->pubIntervalRaceControlData) == 0)
             SutTeBridgeNode::publishRaceControlData();
+            SutTeBridgeNode::publishPush2PassFeedback();
 
         if(this->simTotalMsec % (this->pubIntervalVehicleData) == 0)
             SutTeBridgeNode::publishVehicleData();
@@ -595,7 +609,9 @@ namespace bridge {
     this->feedbackCmd.vehicle_inputs.enable_throttle_cmd = 1;
 
     // # Brake pressure command (kPa)
-    this->feedbackCmd.vehicle_inputs.brake_cmd = msg.brake_cmd;
+    this->feedbackCmd.vehicle_inputs.brake_cmd_front = msg.brake_cmd_front;
+    this->feedbackCmd.vehicle_inputs.brake_cmd_rear = msg.brake_cmd_rear;
+    this->feedbackCmd.vehicle_inputs.brake_bias_switch = msg.brake_bias_switch;
     this->feedbackCmd.vehicle_inputs.brake_cmd_count = msg.brake_cmd_count;
     this->feedbackCmd.vehicle_inputs.enable_brake_cmd = 1;
 
@@ -624,7 +640,7 @@ namespace bridge {
     this->feedbackCmd.to_raptor.veh_sig_ack = msg.veh_sig_ack;
     this->feedbackCmd.to_raptor.ct_state = msg.ct_state;
     this->feedbackCmd.to_raptor.rolling_counter = msg.rolling_counter;
-    if (msg.veh_num != 0)
+    if (msg.veh_num != 0 && msg.veh_num != 255)
     {
       this->feedbackCmd.to_raptor.veh_num = msg.veh_num;
     }
@@ -632,11 +648,13 @@ namespace bridge {
     {
       if (this->numberWarningSent == false)
       {
-        std::cerr << "Vehicle number should not be zero. Will be replaced by 255. Change this configuration to enable racing" << '\n';
+        std::cerr << "Vehicle number should not be 0 or 255. Will be replaced by 254. Change this configuration to enable multi car racing." << '\n';
         this->numberWarningSent = true;
       }
-      this->feedbackCmd.to_raptor.veh_num = 255;
+      this->feedbackCmd.to_raptor.veh_num = 254;
     }
+
+    this->feedbackCmd.to_raptor.push2pass_request = msg.push2pass_request;
     
     this->raptorDataAvailabe = true;
   }
@@ -683,6 +701,7 @@ namespace bridge {
       raceControlData.laps = this->canBus->asm_bus_var.race_control_var.laps;
       raceControlData.lap_time = this->canBus->asm_bus_var.race_control_var.lap_time;
       raceControlData.time_stamp = this->canBus->asm_bus_var.race_control_var.time_stamp;
+      raceControlData.rc_base_sync_check = true;
     }
     else
     {
@@ -697,11 +716,12 @@ namespace bridge {
 
       raceControlData.laps = 0;
       raceControlData.lap_time = 0;
+      raceControlData.rc_base_sync_check = false;
       raceControlData.time_stamp = this->canBus->asm_bus_var.race_control_var.time_stamp;
     }
     
+    // raceControlData.rc_base_sync_check = true;
     
-
     // Header
     raceControlData.header.frame_id = "";
 
@@ -720,6 +740,38 @@ namespace bridge {
     {
       this->raceControlDataPublisher_->publish(raceControlData);
     }
+  }
+
+  void SutTeBridgeNode::publishPush2PassFeedback()
+  {
+    if (this->verbosePrinting)
+    {
+      std::cout << "publishPush2PassFeedback" << '\n';
+    }
+
+    auto p2pData = autonoma_msgs::msg::Push2Pass();
+
+    // Push2Pass Message
+
+    p2pData.push2pass_status = this->canBus->asm_bus_var.race_control_var.push2pass_status;
+    p2pData.push2pass_budget_s = this->canBus->asm_bus_var.race_control_var.push2pass_budget_s;
+    p2pData.push2pass_active_app_limit = this->canBus->asm_bus_var.race_control_var.push2pass_active_app_limit;
+
+    // Header
+    p2pData.header.frame_id = "";
+
+    if(this->simModeEnabled)
+    {
+      p2pData.header.stamp.sec = this->sec;
+      p2pData.header.stamp.nanosec = this->nsec;
+    }
+    else
+    {
+      p2pData.header.stamp.sec = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+      p2pData.header.stamp.nanosec = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - (p2pData.header.stamp.sec*1000000000);
+    }
+
+    this->push2PassFeedbackPublisher_->publish(p2pData);
   }
 
   void SutTeBridgeNode::publishVehicleData()
@@ -1133,12 +1185,12 @@ namespace bridge {
       if (i == 0)
       {
         currentGPS = this->canBus->sim_interface_var.vector_nav_vn1_var.gps_group1_var;
-        this->verctorNavGpsGroupPublisher = this->verctorNavGpsGroupRightPublisher_;
+        this->verctorNavGpsGroupPublisher = this->verctorNavGpsGroupLeftPublisher_;
         }
       else if (i == 1)
       {
         currentGPS = this->canBus->sim_interface_var.vector_nav_vn1_var.gps_group2_var;
-        this->verctorNavGpsGroupPublisher = this->verctorNavGpsGroupLeftPublisher_;
+        this->verctorNavGpsGroupPublisher = this->verctorNavGpsGroupRightPublisher_;
       }
       else
       {

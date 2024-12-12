@@ -11,3 +11,4 @@ uint8 round_target_speed
 uint8 laps
 float32 lap_time
 float32 time_stamp
+bool rc_base_sync_check
