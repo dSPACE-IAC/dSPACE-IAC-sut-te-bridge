@@ -127,6 +127,8 @@ namespace bridge
         bool raptorDataAvailabe = false;
         bool useCustomRaceControl = false;
         bool verbosePrinting = false;
+        bool stackFeedbackConnectionWarningSent = false;
+        bool stackRaptorConnectionWarningSent = false;
         bool simModeEnabled = false;
         bool numberWarningSent = false;
         uint8_t prestart_rolling_counter;
