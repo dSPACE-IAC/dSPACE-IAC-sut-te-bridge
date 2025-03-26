@@ -129,6 +129,8 @@ namespace bridge
         bool verbosePrinting = false;
         bool simModeEnabled = false;
         bool numberWarningSent = false;
+        bool stackRaptorConnectionWarningSent = false;
+        bool stackFeedbackConnectionWarningSent = false;
         uint8_t prestart_rolling_counter;
 
 
