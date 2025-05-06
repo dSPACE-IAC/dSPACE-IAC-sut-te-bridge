@@ -99,7 +99,8 @@ namespace bridge {
         catch(const std::exception& e)
         {
           std::cerr << "Publishing of lidar data failed: " << e.what() << '\n';
-          rclcpp::sleep_for(1s);
+          rclcpp::sleep_for(5s);
+          this->sensorApi.connect();
         }
         //auto end = std::chrono::high_resolution_clock::now();
         //std::chrono::duration<double, std::milli> duration = end - start;
@@ -119,6 +120,8 @@ namespace bridge {
         catch(const std::exception& e)
         {
           std::cerr << "Publishing of radar data failed: " << e.what() << '\n';
+          rclcpp::sleep_for(5s);
+          this->sensorApi.connect();
         }
       };
     }
@@ -138,6 +141,8 @@ namespace bridge {
         catch(const std::exception& e)
         {
           std::cerr << "Publishing of camera data failed: " << e.what() << '\n';
+          rclcpp::sleep_for(5s);
+          this->sensorApi.connect();
         }
       };
     }
