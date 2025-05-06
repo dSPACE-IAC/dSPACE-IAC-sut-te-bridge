@@ -1,4 +1,4 @@
-FROM ros:humble-ros-base AS dspace_ros_base
+FROM ros:humble-ros-base AS dspace-ros-base
 # Adds all dspace specific dependencies to a ros humble base image
 SHELL ["/bin/bash", "-c"]
 ENTRYPOINT ["tail", "-f", "/dev/null"]
