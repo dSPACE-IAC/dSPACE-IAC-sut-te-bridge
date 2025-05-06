@@ -49,15 +49,85 @@ namespace bridge {
     }
 
     //-----------------------------Connect to V-ESI--------------------------------
-    std::cout << "Trying to connect to sensor V-ESI..." << std::endl;
-    bool vesiSensorConnection = false;
-    int16_t retries = 1;
-    int16_t max_retries = 10;
 
     std::list<uint8_t> requiredSensorIds{this->sensorId};
     this->sensorApi.setRequiredSensorIDs(requiredSensorIds);
     const auto qos = rclcpp::QoS(rclcpp::KeepLast(10), rmw_qos_profile_iac);
 
+    int16_t max_retries = 10;
+    SensorBridgeNode::connectToSensorApi(max_retries);
+    std::cout << "Setup done." << '\n';
+
+    //-----------------------------Sensors--------------------------------
+
+    if(this->sensorType == "LIDAR" || this->sensorType ==  "Lidar" || this->sensorType == "lidar")
+    {
+      this->lidarDataPublisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(this->rosTopic, qos);
+      while(rclcpp::ok())
+      {
+        //auto start = std::chrono::high_resolution_clock::now();
+        try
+        {
+           SensorBridgeNode::publishLidarData(this->sensorId);
+        }
+        catch(const std::exception& e)
+        {
+          std::cerr << "Publishing of lidar data failed: " << e.what() << '\n';
+          rclcpp::sleep_for(5s);
+          SensorBridgeNode::connectToSensorApi(max_retries)
+        }
+        //auto end = std::chrono::high_resolution_clock::now();
+        //std::chrono::duration<double, std::milli> duration = end - start;
+        //std::cout << "Function execution time: " << duration.count() << " ms" << std::endl;
+      };
+    }
+
+    if(this->sensorType == "RADAR" || this->sensorType == "Radar" || this->sensorType == "radar")
+    {
+      this->radarDataPublisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(this->rosTopic, qos);
+      while(rclcpp::ok())
+      {
+        try
+        {
+          SensorBridgeNode::publishRadarData(this->sensorId);
+        }
+        catch(const std::exception& e)
+        {
+          std::cerr << "Publishing of radar data failed: " << e.what() << '\n';
+          rclcpp::sleep_for(5s);
+          SensorBridgeNode::connectToSensorApi(max_retries)
+        }
+      };
+    }
+
+    if(this->sensorType == "CAMERA" || this->sensorType == "Camera" || this->sensorType == "camera")
+    {
+      this->cameraImageType = 0;
+      this->cameraDataPublisher_ = this->create_publisher<sensor_msgs::msg::Image>(this->rosTopic, qos);
+      std::unique_ptr<CameraDataDeserializerDefault> cameraDeserializer(new CameraDataDeserializerDefault);
+      cameraDeserializer->Initialize();
+      while(rclcpp::ok())
+      {
+        try
+        {
+          SensorBridgeNode::publishCameraData(cameraDeserializer, this->sensorId, this->cameraImageType);
+        }
+        catch(const std::exception& e)
+        {
+          std::cerr << "Publishing of camera data failed: " << e.what() << '\n';
+          rclcpp::sleep_for(5s);
+          SensorBridgeNode::connectToSensorApi(max_retries)
+        }
+      };
+    }
+  }
+
+  void SensorBridgeNode::connectToSensorApi(int16_t max_retries)
+  {
+
+    std::cout << "Trying to connect to sensor V-ESI..." << std::endl;
+    bool vesiSensorConnection = false;
+    int16_t retries = 1;
     while (vesiSensorConnection == false)
     {
       try
@@ -82,71 +152,6 @@ namespace bridge {
         }
       }
     }
-    std::cout << "Setup done." << '\n';
-
-    //-----------------------------Sensors--------------------------------
-
-    if(this->sensorType == "LIDAR" || this->sensorType ==  "Lidar" || this->sensorType == "lidar")
-    {
-      this->lidarDataPublisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(this->rosTopic, qos);
-      while(rclcpp::ok())
-      {
-        //auto start = std::chrono::high_resolution_clock::now();
-        try
-        {
-           SensorBridgeNode::publishLidarData(this->sensorId);
-        }
-        catch(const std::exception& e)
-        {
-          std::cerr << "Publishing of lidar data failed: " << e.what() << '\n';
-          rclcpp::sleep_for(5s);
-          this->sensorApi.connect();
-        }
-        //auto end = std::chrono::high_resolution_clock::now();
-        //std::chrono::duration<double, std::milli> duration = end - start;
-        //std::cout << "Function execution time: " << duration.count() << " ms" << std::endl;
-      };
-    }
-
-    if(this->sensorType == "RADAR" || this->sensorType == "Radar" || this->sensorType == "radar")
-    {
-      this->radarDataPublisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(this->rosTopic, qos);
-      while(rclcpp::ok())
-      {
-        try
-        {
-          SensorBridgeNode::publishRadarData(this->sensorId);
-        }
-        catch(const std::exception& e)
-        {
-          std::cerr << "Publishing of radar data failed: " << e.what() << '\n';
-          rclcpp::sleep_for(5s);
-          this->sensorApi.connect();
-        }
-      };
-    }
-
-    if(this->sensorType == "CAMERA" || this->sensorType == "Camera" || this->sensorType == "camera")
-    {
-      this->cameraImageType = 0;
-      this->cameraDataPublisher_ = this->create_publisher<sensor_msgs::msg::Image>(this->rosTopic, qos);
-      std::unique_ptr<CameraDataDeserializerDefault> cameraDeserializer(new CameraDataDeserializerDefault);
-      cameraDeserializer->Initialize();
-      while(rclcpp::ok())
-      {
-        try
-        {
-          SensorBridgeNode::publishCameraData(cameraDeserializer, this->sensorId, this->cameraImageType);
-        }
-        catch(const std::exception& e)
-        {
-          std::cerr << "Publishing of camera data failed: " << e.what() << '\n';
-          rclcpp::sleep_for(5s);
-          this->sensorApi.connect();
-        }
-      };
-    }
-
   }
 
   void SensorBridgeNode::publishLidarData(uint8_t sensorId)
