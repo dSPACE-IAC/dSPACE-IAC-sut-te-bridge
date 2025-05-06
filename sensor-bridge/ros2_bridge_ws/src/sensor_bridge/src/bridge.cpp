@@ -74,7 +74,7 @@ namespace bridge {
         {
           std::cerr << "Publishing of lidar data failed: " << e.what() << '\n';
           rclcpp::sleep_for(5s);
-          SensorBridgeNode::connectToSensorApi(max_retries)
+          SensorBridgeNode::connectToSensorApi(max_retries);
         }
         //auto end = std::chrono::high_resolution_clock::now();
         //std::chrono::duration<double, std::milli> duration = end - start;
@@ -95,7 +95,7 @@ namespace bridge {
         {
           std::cerr << "Publishing of radar data failed: " << e.what() << '\n';
           rclcpp::sleep_for(5s);
-          SensorBridgeNode::connectToSensorApi(max_retries)
+          SensorBridgeNode::connectToSensorApi(max_retries);
         }
       };
     }
@@ -116,7 +116,7 @@ namespace bridge {
         {
           std::cerr << "Publishing of camera data failed: " << e.what() << '\n';
           rclcpp::sleep_for(5s);
-          SensorBridgeNode::connectToSensorApi(max_retries)
+          SensorBridgeNode::connectToSensorApi(max_retries);
         }
       };
     }
@@ -138,16 +138,16 @@ namespace bridge {
       }
       catch(const std::exception& e)
       {
-        std::cerr << "Failed to configure V-ESI: " << e.what() << '\n';
+        std::cerr << "Failed to configure V-ESI: " << e.what() << std::endl;
         if (retries < max_retries)
         {
-          std::cout << "Failed for the " << retries << ". time. Try again." << '\n';
+          std::cout << "Failed for the " << retries << ". time. Try again." << std::endl;
           retries++;
           rclcpp::sleep_for(5s);
         }
         else
         {
-          std::cout << "Failed too often. Exit." << '\n';
+          std::cout << "Failed too often. Exit." << std::endl;
           throw e;
         }
       }

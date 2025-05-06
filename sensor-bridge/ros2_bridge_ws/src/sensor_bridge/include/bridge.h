@@ -15,6 +15,7 @@
 #include "sensor_msgs/msg/image.hpp"
 
 #include "iac_qos.h"
+#include "VESIAPI.h"
 #include "AtomicSensorInformation.h"
 #include "CameraDataDeserializerDefault.h"
 #include "CameraDataDeserializerTypes.h"
@@ -39,6 +40,7 @@ namespace bridge
 
         // Sensors publishing functions
         VESIAPI sensorApi;
+        void connectToSensorApi(int16_t max_retries);
         void publishLidarData(uint8_t sensorId);
         void publishRadarData(uint8_t sensorId);
         void publishCameraData(std::unique_ptr<CameraDataDeserializerDefault>& deserializer, uint8_t sensorId, int cameraImageType);
