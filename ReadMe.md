@@ -1,5 +1,5 @@
 # dSPACE Indy Autonomous Challenge Simulator
-This repository contains the current state of the SUT-TE-bridge implementation for the dSPACE IAC simulation environment. The bridge enables the data exchange between the dSPACE ASM car and environment model and ROS2. If you encounter bugs or missing features, feel free to open an issue and/or create a branch for your implementation and merge it back into the main branch later on. Long term it is planned to make this repository open source, for the moment every team member needs to request access separately.
+This repository contains the current state of the SUT-TE-bridge and sensor-bridge implementation for the dSPACE IAC simulation environment. The sut-te-bridge enables the data exchange between the dSPACE ASM car and environment model and ROS2. The sensor-bridge communicates sensor data (camera, lidar, radar) between the AURELION V-ESI and ROS2. If you encounter bugs or missing features, feel free to open an issue and/or create a branch for your implementation and merge it back into the main branch later on.
 
 This documents enables you to get started with the minimal local setup of the dSPACE Indy Autonomous Challenge simulator.
 
@@ -21,19 +21,23 @@ The dev version only contains the dependencies required by both bridge versions 
 The simphera version contains the compiled sut-te-bridge node and an entrypoint for automatic startup of that node. The simphera version is also recommended to be used for local testing, when working on the SUT code to check whether the system is capable to run with automatic startup procedure used in the cloud.
 The foxglove version contains the foxglove-bridge application and an entrypoint to start the corresponding node.
 
+### Dockerfile_Sensor_Bridge
+There are two versions: sensor-bridge_dev and sensor-bridge_simphera.   
+
 ### runtime_scripts
-This directory contains some scripts, which should make the work with the dev version of the bridge easier.
+This directory contains some scripts, which should make the work with the dev version of the bridges easier.
 
 ### ros_ws_aux
 This auxilary ros workspace should contain all ros packages, that are required by simphera and foxglove bridge versions. Currently this contains all custom message definitions used in the system. If you want to make your custom messages available in foxglove, the easiest way would be to add your definitions to this auxilary workspace and rebuild the foxglove bridge. There is no need to add your custom messages to the repository, if they should only be available in foxglove. If they should also be used by the simphera bridge please push them and create a pull request.
 
 ### ros2_bridge_ws
-This ros workspace contains the main source code of the sut-te-bridge package. If you want to understand how the connection to the simulator is implemented and which ros topics are published and subscribed, have a look here.
+This ros workspace contains the main source code of the sut-te-bridge and sensor-bridge package. If you want to understand how the connection to the simulator is implemented and which ros topics are published and subscribed, have a look here.
 
 ## How to
 The following instructions assume an execution in a Linux environment, either on a Linux host system or in WSL. This means that all given commands and scripts are written for Linux. However the execution also works for Windows and Mac, you just need to adapt the commands and scripts slightly for your preferred OS.
 
 ### Execute
+Example workflow for sut-te-bridge:
 1. Start Docker Desktop
 2. Navigate into the folder, where the Docker compose is located.
 3. Open a terminal and execute `docker compose -f docker-compose_sut_te_bridge_foxglove.yml up`
@@ -48,8 +52,8 @@ The following instructions assume an execution in a Linux environment, either on
             - ./dSPACE-IAC-sut-te-bridge/ros2_bridge_ws:/root/ros2_bridge_ws
             - ./dSPACE-IAC-sut-te-bridge/runtime_scripts:/root/runtime_scripts
     2. `docker exec -it sut_te_bridge bash`
-    3. `./ros2build`
-    4. `./ros2run`
+    3. `./sut-te-bridge-ros2build`
+    4. `./sut-te-bridge-ros2run`
 6. Open a third terminal and start your stack. In our example that includes attaching to the driving_stack container and executing the start script:
     1. `docker exec -it driving_stack bash`
     2. `./ros2build`
