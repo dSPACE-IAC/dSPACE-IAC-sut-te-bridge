@@ -75,5 +75,17 @@ install(TARGETS ${exe_name}
   DESTINATION lib/${PROJECT_NAME}
 )
 
+# Install the VESI API library into the install directory
+install(FILES
+  ${VESIAPI_DIR}/lib/linux/libVESIAPI.so
+  DESTINATION lib
+)
+
+# Runtime link the VESI API path (rather than a static path)
+set_target_properties(
+  ${exe_name} PROPERTIES
+  INSTALL_RPATH "$ORIGIN/.."
+)
+
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()
