@@ -41,7 +41,6 @@ ENTRYPOINT ["tail", "-f", "/dev/null"]
 FROM sensor-bridge_base AS sensor-bridge_simphera
 # Build bridge node and enable autostart for headless execution
 COPY sensor-bridge/ros2_bridge_ws /root/ros2_bridge_ws
-COPY sensor-bridge/runtime_scripts /root/runtime_scripts
 RUN mkdir -p /root/record_log && \
     source /opt/ros/humble/local_setup.bash && \
     source /root/ros_ws_aux/install/local_setup.bash && \
