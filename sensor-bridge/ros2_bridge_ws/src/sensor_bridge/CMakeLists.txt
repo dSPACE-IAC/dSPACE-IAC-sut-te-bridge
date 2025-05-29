@@ -21,7 +21,6 @@ find_package(geometry_msgs REQUIRED)
 find_package(autonoma_msgs REQUIRED)
 find_package(vectornav_msgs REQUIRED)
 find_package(novatel_oem7_msgs REQUIRED)
-find_package(npc_controller_msgs REQUIRED)
 find_package(foxglove_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(rosgraph_msgs REQUIRED)
@@ -33,7 +32,6 @@ set(MSG_DEPS geometry_msgs)
 set(MSG_DEPS autonoma_msgs)
 set(MSG_DEPS vectornav_msgs)
 set(MSG_DEPS novatel_oem7_msgs)
-set(MSG_DEPS npc_controller_msgs)
 set(MSG_DEPS rosgraph_msgs)
 
 include_directories(
@@ -49,7 +47,6 @@ set(dependencies
   autonoma_msgs
   vectornav_msgs
   novatel_oem7_msgs
-  npc_controller_msgs
   foxglove_msgs
   rosgraph_msgs
 )

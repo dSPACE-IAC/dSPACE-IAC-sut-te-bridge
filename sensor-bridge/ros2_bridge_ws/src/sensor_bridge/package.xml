@@ -16,7 +16,6 @@
   <depend>autonoma_msgs</depend>
   <depend>vectornav_msgs</depend>
   <depend>novatel_oem7_msgs</depend>
-  <depend>npc_controller_msgs</depend>
   <depend>foxglove_msgs</depend>
   <depend>rosgraph_msgs</depend>
 
