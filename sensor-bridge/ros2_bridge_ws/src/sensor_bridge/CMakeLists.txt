@@ -10,9 +10,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_C_STANDARD 99)
 
-include_directories(/opt/ros/humble/include/tf2)
-include_directories(/opt/ros/humble/include/tf2_ros)
-
 # find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -21,10 +18,11 @@ find_package(geometry_msgs REQUIRED)
 find_package(autonoma_msgs REQUIRED)
 find_package(vectornav_msgs REQUIRED)
 find_package(novatel_oem7_msgs REQUIRED)
-find_package(npc_controller_msgs REQUIRED)
 find_package(foxglove_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(rosgraph_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(OpenMP REQUIRED)
 
 set(MSG_DEPS std_msgs)
@@ -33,7 +31,6 @@ set(MSG_DEPS geometry_msgs)
 set(MSG_DEPS autonoma_msgs)
 set(MSG_DEPS vectornav_msgs)
 set(MSG_DEPS novatel_oem7_msgs)
-set(MSG_DEPS npc_controller_msgs)
 set(MSG_DEPS rosgraph_msgs)
 
 include_directories(
@@ -49,9 +46,10 @@ set(dependencies
   autonoma_msgs
   vectornav_msgs
   novatel_oem7_msgs
-  npc_controller_msgs
   foxglove_msgs
   rosgraph_msgs
+  tf2
+  tf2_ros
 )
 
 install(DIRECTORY include/
@@ -77,8 +75,17 @@ target_include_directories(${exe_name}
 install(TARGETS ${exe_name}
   DESTINATION lib/${PROJECT_NAME}
 )
-install(DIRECTORY launch
-  DESTINATION share/${PROJECT_NAME}
+
+# Install the VESI API library into the install directory
+install(FILES
+  ${VESIAPI_DIR}/lib/linux/libVESIAPI.so
+  DESTINATION lib
+)
+
+# Runtime link the VESI API path (rather than a static path)
+set_target_properties(
+  ${exe_name} PROPERTIES
+  INSTALL_RPATH "$ORIGIN/.."
 )
 
 ament_export_dependencies(rosidl_default_runtime)

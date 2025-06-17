@@ -3,7 +3,6 @@ FROM ros:humble-ros-base AS dspace_ros_base
 SHELL ["/bin/bash", "-c"]
 ENTRYPOINT ["tail", "-f", "/dev/null"]
 
-ENV LD_LIBRARY_PATH=/opt/VESI/lib
 ENV SIM_CLOCK_MODE=false
 ENV ENABLE_LOG=false
 
@@ -12,11 +11,6 @@ RUN apt-get update && \
 
 RUN rosdep update && \
     echo 'source /opt/ros/humble/local_setup.bash' >> /root/.bashrc
-
-RUN mkdir -p /opt/VESI/lib 
-COPY sensor-bridge/ros2_bridge_ws/src/sensor_bridge/include/V-ESI-API/lib/linux/libVESIAPI.so /opt/VESI/lib/
-
-RUN ldconfig
 
 FROM dspace_ros_base AS sensor-bridge_base 
 # Build bridge message definitions to enable dev working environment
@@ -41,7 +35,6 @@ ENTRYPOINT ["tail", "-f", "/dev/null"]
 FROM sensor-bridge_base AS sensor-bridge_simphera
 # Build bridge node and enable autostart for headless execution
 COPY sensor-bridge/ros2_bridge_ws /root/ros2_bridge_ws
-COPY sensor-bridge/runtime_scripts /root/runtime_scripts
 RUN mkdir -p /root/record_log && \
     source /opt/ros/humble/local_setup.bash && \
     source /root/ros_ws_aux/install/local_setup.bash && \
