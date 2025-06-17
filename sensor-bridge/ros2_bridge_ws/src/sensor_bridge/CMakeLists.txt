@@ -12,26 +12,10 @@ set(CMAKE_C_STANDARD 99)
 
 # find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(autonoma_msgs REQUIRED)
-find_package(vectornav_msgs REQUIRED)
-find_package(novatel_oem7_msgs REQUIRED)
-find_package(foxglove_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(rosgraph_msgs REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(OpenMP REQUIRED)
 
-set(MSG_DEPS std_msgs)
 set(MSG_DEPS sensor_msgs)
-set(MSG_DEPS geometry_msgs)
-set(MSG_DEPS autonoma_msgs)
-set(MSG_DEPS vectornav_msgs)
-set(MSG_DEPS novatel_oem7_msgs)
-set(MSG_DEPS rosgraph_msgs)
 
 include_directories(
   include
@@ -39,17 +23,8 @@ include_directories(
 
 set(dependencies
   rclcpp
-  std_msgs
   sensor_msgs
-  geometry_msgs
   rosidl_default_generators
-  autonoma_msgs
-  vectornav_msgs
-  novatel_oem7_msgs
-  foxglove_msgs
-  rosgraph_msgs
-  tf2
-  tf2_ros
 )
 
 install(DIRECTORY include/
