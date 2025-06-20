@@ -166,7 +166,10 @@ namespace bridge {
       this->novaTelRawImuPublisher2_ = this->create_publisher<novatel_oem7_msgs::msg::RAWIMU>("novatel_bottom/rawimu", qos);
       this->novaTelRawImuXPublisher2_ = this->create_publisher<sensor_msgs::msg::Imu>("novatel_bottom/rawimux", qos);
 
-      this->foxgloveMapPublisher_ = this->create_publisher<sensor_msgs::msg::NavSatFix>("foxglove_map", qos);
+      this->foxgloveMapPublisher0_ = this->create_publisher<sensor_msgs::msg::NavSatFix>("map2d_ego_position", qos);
+      this->foxgloveMapPublisher1_ = this->create_publisher<sensor_msgs::msg::NavSatFix>("map2d_fellow1_position", qos);
+      this->foxgloveMapPublisher2_ = this->create_publisher<sensor_msgs::msg::NavSatFix>("map2d_fellow2_position", qos);
+      this->foxgloveMapPublisher3_ = this->create_publisher<sensor_msgs::msg::NavSatFix>("map2d_fellow3_position", qos);
       this->foxgloveScenePublisher_ = this->create_publisher<foxglove_msgs::msg::SceneUpdate>("foxglove_scene", qos);
       this->egoPositionPublisher_ = this->create_publisher<geometry_msgs::msg::TransformStamped>("ego_position", qos);
 
@@ -408,7 +411,13 @@ namespace bridge {
 
         if(this->simTotalMsec % (this->pubIntervalFoxgloveMap) == 0)
     	  {
-          SutTeBridgeNode::publishFoxgloveMap();
+          int numFellows = (int)this->canBus->sim_interface_var.vehicle_sensors_var.fellow_count;
+          //std::cout << numFellows << '\n';
+          SutTeBridgeNode::publishFoxgloveMap(0);
+          for (size_t fellowID = 1; fellowID <= std::min(3, numFellows); fellowID++)
+          {
+            SutTeBridgeNode::publishFoxgloveMap(fellowID);
+          }
           // SutTeBridgeNode::publishFoxgloveSceneUpdate();
         }
 
@@ -421,11 +430,11 @@ namespace bridge {
     }
   }
 
-  void SutTeBridgeNode::publishFoxgloveMap()
+ void SutTeBridgeNode::publishFoxgloveMap(uint8_t fellowID)
   {
     if (this->verbosePrinting)
     {
-      std::cout << "publishFoxgloveMap" << std::endl;
+      std::cout << "publishFoxgloveMap" << '\n';
     }
 
     // Best Pos
@@ -433,14 +442,46 @@ namespace bridge {
 
     foxgloveMap.status.status = -1;
     foxgloveMap.status.service = 1;
+
+    if (fellowID == 0)
+      {
+        foxgloveMap.latitude = this->canBus->sim_interface_var.nova_tel_pwr_pak1_var.best_pos_var.lat;
+        foxgloveMap.longitude = this->canBus->sim_interface_var.nova_tel_pwr_pak1_var.best_pos_var.lon;
+        foxgloveMap.altitude = this->canBus->sim_interface_var.nova_tel_pwr_pak1_var.best_pos_var.hgt;
+        this->foxgloveMapPublisher = this->foxgloveMapPublisher0_;
+      }
+    else if (fellowID == 1)
+      {
+        foxgloveMap.latitude = this->canBus->sim_interface_var.vehicle_sensors_var.ground_truth_var.lat[0];
+        foxgloveMap.longitude = this->canBus->sim_interface_var.vehicle_sensors_var.ground_truth_var.lon[0];
+        foxgloveMap.altitude = this->canBus->sim_interface_var.vehicle_sensors_var.ground_truth_var.hgt[0];
+        this->foxgloveMapPublisher = this->foxgloveMapPublisher1_;
+      }
+    else if (fellowID == 2)
+      {
+        foxgloveMap.latitude = this->canBus->sim_interface_var.vehicle_sensors_var.ground_truth_var.lat[1];
+        foxgloveMap.longitude = this->canBus->sim_interface_var.vehicle_sensors_var.ground_truth_var.lon[1];
+        foxgloveMap.altitude = this->canBus->sim_interface_var.vehicle_sensors_var.ground_truth_var.hgt[1];
+        this->foxgloveMapPublisher = this->foxgloveMapPublisher2_;
+      }
+    else if (fellowID == 3)
+      {
+        foxgloveMap.latitude = this->canBus->sim_interface_var.vehicle_sensors_var.ground_truth_var.lat[2];
+        foxgloveMap.longitude = this->canBus->sim_interface_var.vehicle_sensors_var.ground_truth_var.lon[2];
+        foxgloveMap.altitude = this->canBus->sim_interface_var.vehicle_sensors_var.ground_truth_var.hgt[2];
+        this->foxgloveMapPublisher = this->foxgloveMapPublisher3_;
+      }
+    else
+      {
+        std::cerr << "Unknown Fellow ID. Only three Fellows are supported.\n";
+      }
     
-    foxgloveMap.latitude = this->canBus->sim_interface_var.nova_tel_pwr_pak1_var.best_pos_var.lat;
-    foxgloveMap.longitude = this->canBus->sim_interface_var.nova_tel_pwr_pak1_var.best_pos_var.lon;
-    foxgloveMap.altitude = this->canBus->sim_interface_var.nova_tel_pwr_pak1_var.best_pos_var.hgt;
 
     foxgloveMap.position_covariance_type = 0;
+
     // Header
     foxgloveMap.header.frame_id = "world";
+
     if(this->simModeEnabled)
     {
       foxgloveMap.header.stamp.sec = this->sec;
@@ -452,7 +493,7 @@ namespace bridge {
       foxgloveMap.header.stamp.nanosec = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - (foxgloveMap.header.stamp.sec*1000000000);
     }
   
-    this->foxgloveMapPublisher_->publish(foxgloveMap);
+    this->foxgloveMapPublisher->publish(foxgloveMap);
   }
 
   void SutTeBridgeNode::publishFoxgloveSceneUpdate()
