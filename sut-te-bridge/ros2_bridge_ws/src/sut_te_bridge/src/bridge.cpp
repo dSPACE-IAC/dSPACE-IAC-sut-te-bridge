@@ -412,7 +412,7 @@ namespace bridge {
         if(this->simTotalMsec % (this->pubIntervalFoxgloveMap) == 0)
     	  {
           int numFellows = (int)this->canBus->sim_interface_var.vehicle_sensors_var.fellow_count;
-          //std::cout << numFellows << '\n';
+          //std::cout << numFellows << std::endl;
           SutTeBridgeNode::publishFoxgloveMap(0);
           for (size_t fellowID = 1; fellowID <= std::min(3, numFellows); fellowID++)
           {
@@ -434,7 +434,7 @@ namespace bridge {
   {
     if (this->verbosePrinting)
     {
-      std::cout << "publishFoxgloveMap" << '\n';
+      std::cout << "publishFoxgloveMap" << std::endl;
     }
 
     // Best Pos
